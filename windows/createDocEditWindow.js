@@ -21,7 +21,7 @@ exports.createDocEditWindow = function createDocEditWindow(parentWindow, type, c
 
   if (!win || win === null) {
     win = new BrowserWindow ({
-      width: 550,
+      width: 600,
       height: 700,
       parent: parentWindow,
       modal: true,

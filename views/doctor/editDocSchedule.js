@@ -20,10 +20,9 @@ window.editContentAPI.receive('response-doctor-data', async data => {
     setScheduleHours();
 
     await showDoctor(data._id);
-
-    toggleInputs(data.method);
   }
   catch (error) {
+    console.log(error);
 
   }
 });
@@ -59,31 +58,16 @@ async function showDoctor (id) {
   }
 }
 
-function checkHours(startTime, endTime)
+function validateTime(time)
 {
-  let sTime = startTime.split(' ')[1];
-  let sHour = startTime.split(':')[0];
+  const inputTime = time.slice(-2);
+  const hour = parseInt(time.split(':')[0]);
 
+  if (hour === 12)  return 12;
 
-  let eTime = endTime.split(' ')[1];
-  let eHour = endTime.split(':')[0];
-
-  if(sTime == eTime)
-  {
-    if(eHour > sHour)
-      return true;
-    else
-      return false;
-  }
-  else if(sTime == "AM" && eTime == "PM")
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
+  return (inputTime.toLowerCase() === 'pm') ? hour + 12 : hour;
 }
+
 /*set schedule hours for doctor */
 function setScheduleHours(){
   for (let i = 7; i < 20; i++) {
@@ -172,11 +156,6 @@ async function addForm(){
   container.appendChild(row1);
 
 
-  addBtn.addEventListener('click', e => {
-
-
-  });
-
   addBtn.addEventListener('click', async e => {
     try {
 
@@ -184,8 +163,13 @@ async function addForm(){
       workSTime = document.getElementById('startselect')?.value;
       workETime = document.getElementById('endselect')?.value;
       
-      if(checkHours(workSTime, workETime))
+      let stime = validateTime(workSTime);
+      let etime = validateTime(workETime);
+      if(etime <= stime)
       {
+        throw new Error("End Time must be greater than Start Time!");
+      }
+
       const response = await addDoctorSchedule ( {
         doctorId : id,
         startTime : workSTime, 
@@ -195,27 +179,54 @@ async function addForm(){
 
       if (response && response.ok) {
         console.log("successfully added!");
-        //showAlertModal(`New Schedule is successfully created!`, "New Schedule Added!", "success");
+        showAlertModal(`New Schedule is successfully created!`, "New Schedule Added!", "success");
       }
       else {
         const { message } = await response.json();
+        showAlertModal(errorMessage);
         const errorMessage = message ? message : "Error: adding doctor. code 500";
         showErrorMessage(errorMessage);
       }
-    }
-    else
-    {
-      throw new Error("End Time must be Greater than Start Time");
-    }
+    
     }
     catch (error) {
       console.log(error);
-      showErrorMessage(`Application Error: code 300`);
+      showAlertModal(error, "Error", "error")
+      //showErrorMessage(`Application Error: code 300`);
     }
     
   });
 
  
+}
+
+function showAlertModal(msg, header, type) {
+
+  const alertModal = document.getElementById("alert-modal");
+  alertModal.style.display = "flex";
+
+  const modalContent = document.getElementById("alert-modal-content");
+  const modalContentHeader = document.getElementById("alert-modal-header");
+
+  if (type === "success")
+    modalContentHeader.style.background = "green";
+  else {
+    modalContentHeader.style.background = "red";
+  }
+
+  modalContentHeader.innerHTML = header;
+  modalContentHeader.style.color = "white";
+
+  const message = document.getElementById("my-alert-modal-message");
+  message.innerHTML = msg;
+}
+
+
+function removeAlertModal (e) {
+  e.preventDefault();
+  const alertModal = document.getElementById("alert-modal");
+  if (alertModal)
+    alertModal.style.display = "none";
 }
 
 function clearDataContainer () {
@@ -329,34 +340,6 @@ function displayDoctorData(emp) {
 }
 
 
-function toggleInputs (method) {
-  const inputs = document.querySelectorAll("input");
-
-  inputs.forEach(
-    input => {
-      if (input.getAttribute("id") != "id" && input.getAttribute("id") != "doctorId"
-          && input.getAttribute("id") != "specialization") {
-        if (method === "PUT")
-          input.removeAttribute("readonly");
-        else
-          input.setAttribute("readonly", true);
-
-      }
-    }
-  );
-
-  if (method === "PUT") {
-    const editButton = document.getElementById("edit-doctor");
-    editButton.style.display = "block";
-    
-  }
-  else {
-    const editButton = document.getElementById("edit-doctor");
-    editButton.style.display = "none";
-    
-
-  }
-}
 
 
 /**
@@ -482,5 +465,6 @@ async function addDoctorSchedule(data)
   }
   catch (error) {
     console.error(error);
+    showAlertModal(error, "Error", "error");
   }
 }

@@ -113,6 +113,7 @@ function setScheduleHours(){
 /*  Adding new inputs for working hours */
 async function addForm(event){
   workCount+= 1;
+  console.log(workCount);
   const container = document.getElementById("container1");
   console.log(container.childElementCount);
 
@@ -710,34 +711,14 @@ function setMinAge (input) {
 
 function validateTime(time)
 {
+  const inputTime = time.slice(-2);
+  const hour = parseInt(time.split(':')[0]);
 
+  if (hour === 12)  return 12;
+
+  return (inputTime.toLowerCase() === 'pm') ? hour + 12 : hour;
 }
 
-function checkHours(startTime, endTime)
-{
-  let sTime = startTime.split(' ')[1];
-  let sHour = startTime.split(':')[0];
-
-
-  let eTime = endTime.split(' ')[1];
-  let eHour = endTime.split(':')[0];
-
-  if(sTime == eTime)
-  {
-    if(eHour > sHour)
-      return true;
-    else
-      return false;
-  }
-  else if(sTime == "AM" && eTime == "PM")
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
 
 /**
 # Create Doctor
@@ -759,11 +740,13 @@ async function createDoctor(event) {
       workETime = document.getElementById('endselect' + i)?.value;
       
       console.log(workSTime);
-
-
-      if(!checkHours(workSTime, workETime))
+      console.log(workETime);
+      
+      let stime = validateTime(workSTime);
+      let etime = validateTime(workETime);
+      if(etime <= stime)
       {
-       throw new Error("End Time must be Greater than Start Time");
+        throw new Error("End Time must be greater than Start Time!");
       }
 
 
@@ -798,6 +781,7 @@ async function createDoctor(event) {
     });
     if (response && response.ok) {
       const doctor = await response.json();
+      workCount = 0;
       console.log(doctor);
       showAlertModal(`${name}, is successfully created!`, "New Doctor Created!", "success");
       // clear form input
